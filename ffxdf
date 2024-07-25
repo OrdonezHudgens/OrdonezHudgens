@@ -1,0 +1,80 @@
+#导入需要的模块
+#用于构建 Web 应用程序。这段代码中导入了 Flask、request 和 jsonify,其中 Flask 是主要的模块，
+#request 用于处理 HTTP 请求对象，
+import json
+import logging
+from flask import Flask, request, jsonify
+ 
+from flask_cors import CORS
+#用于连接和操作 MySQL 数据库。通过这个库，在 Python 程序中执行 SQL 语句、插入、更新和删除数据等操作。
+import pymysql
+#用于发送 HTTP 请求并处理响应
+import requests
+# 连接数据库
+conn = pymysql.connect(host='127.0.0.1', # 连接名称，默认127.0.0.1
+                       user='root', # 用户名，默认为root
+                       passwd='123456', # 密码，默认为123456
+                       port=3306, # 端口，默认为3306
+                       db='weldingdata', # 所创建的数据库名称**************************************************************************
+                       charset='utf8') # 字符编码
+# 生成游标对象
+cur_1 = conn.cursor()
+cur_2 = conn.cursor()
+cur_3 = conn.cursor()
+# SQL语句*************************************************************table name******************************表名
+sql_1 = "select voltage from `datas`"
+sql_2="select electricity from `datas`"
+sql_3="select pressure from `datas`"
+# 执行SQL语句，并将结果保存到游标对象中使用 cur.execute(sql) 方法来执行该语句，并将查询结果保存到游标对象 cur 中，以便后续处理或输出
+cur_1.execute(sql_1)
+cur_2.execute(sql_2)
+cur_3.execute(sql_3)
+# 通过fetchall方法获得数据
+data_1 = cur_1.fetchall()
+data_2 = cur_2.fetchall()
+data_3 = cur_3.fetchall()
+ 
+#打印数据
+for item in data_1:
+    print(item)
+# 关闭游标
+cur_1.close()
+cur_2.close()
+cur_3.close()
+# 关闭连接
+conn.close()
+# 导入Flask模块，创建一个应用实例，用于发送 HTTP 请求并处理响应
+ 
+#创建了一个名为 app 的 Flask 应用实例
+app = Flask(__name__)
+# 允许跨域访问
+CORS(app, resources={r"/*": {"origins": "*"}})
+# 设置日志
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+# 使用 @app.route 装饰器来定义了一个路由，指定了 /api/users 这个端点接收 GET 请求
+# 处理 HTTP GET 请求，向前端发送数据
+@app.route('/api/users', methods=['GET'])
+def get_data():
+    # 将元组转换为列表，并将所有元素转换为字符串
+    result = [list(map(str, item)) for item in data_1]  
+     # 将列表转换为JSON格式
+    json_result = json.dumps(result) 
+    # 将JSON数据发送到指定URL
+    return jsonify(json_result)  
+#测试地址：http://127.0.0.1:5000/api/users
+ 
+ 
+# 处理前端发送的数据，例如插入到数据库
+@app.route('/submit-fault', methods=['POST'])
+def submit_fault():
+    data = request.json
+    process_data(data)  # 处理数据的函数
+    return jsonify({'message': 'Fault information submitted successfully.'})
+def process_data(data):
+   print(data)
+   return
+#http://127.0.0.1:5000/submit-fault
+# 启动Flask应用
+if __name__ == '__main__':
+    app.run(debug=True)
